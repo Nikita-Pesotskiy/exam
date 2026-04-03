@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Web1 MQTT Chat</title>
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 30px auto;
+      padding: 20px;
+      background: #f4f6f9;
+    }
+    h1 { color: #1e3a8a; }
+    .box {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    input, button {
+      padding: 10px;
+      margin: 5px 0;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    button {
+      background: #2563eb;
+      color: white;
+      border: none;
+      cursor: pointer;
+      border-radius: 8px;
+    }
+    button:hover { background: #1d4ed8; }
+    #messages {
+      margin-top: 20px;
+      padding: 10px;
+      background: #eef2ff;
+      border-radius: 8px;
+      min-height: 150px;
+      white-space: pre-line;
+    }
+    .status {
+      margin-bottom: 10px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h1>Web1</h1>
+    <div class="status" id="status">Статус: підключення...</div>
+
+    <input type="text" id="messageInput" placeholder="Введіть повідомлення" />
+    <button onclick="sendMessage()">Надіслати</button>
+
+    <div id="messages"></div>
+  </div>
+
+  <script>
+    const statusEl = document.getElementById('status');
+    const messagesEl = document.getElementById('messages');
+    const inputEl = document.getElementById('messageInput');
+
+    const client = mqtt.connect('ws://localhost:8083/mqtt');
+
+    client.on('connect', () => {
+      statusEl.textContent = 'Статус: підключено до EMQX';
+      client.subscribe('exam/chat');
+      addMessage('SYSTEM', 'Web1 підключено і підписано на topic exam/chat');
+    });
+
+    client.on('error', (err) => {
+      statusEl.textContent = 'Статус: помилка підключення';
+      addMessage('ERROR', err.message);
+    });
+
+    client.on('message', (topic, message) => {
+      try {
+        const data = JSON.parse(message.toString());
+        addMessage(data.sender, data.text);
+      } catch {
+        addMessage('UNKNOWN', message.toString());
+      }
+    });
+
+    function sendMessage() {
+      const text = inputEl.value.trim();
+      if (!text) return;
+
+      const payload = {
+        sender: 'Web1',
+        text: text,
+        time: new Date().toLocaleTimeString()
+      };
+
+      client.publish('exam/chat', JSON.stringify(payload));
+      inputEl.value = '';
+    }
+
+    function addMessage(sender, text) {
+      messagesEl.textContent += [${sender}] ${text}\n;
+    }
+  </script>
+</body>
+</html>

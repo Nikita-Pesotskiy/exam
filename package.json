@@ -1,0 +1,8 @@
+{
+  "name": "exam-event-driven-mqtt",
+  "version": "1.0.0",
+  "description": "EMQX + two web clients",
+  "scripts": {
+    "start": "npx http-server ./src -p 8080 -c-1"
+  }
+}
